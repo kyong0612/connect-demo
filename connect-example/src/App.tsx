@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import { useState } from "react";
+import reactLogo from "./assets/react.svg";
+import "./App.css";
 
 import { createPromiseClient } from "@bufbuild/connect";
 import { createConnectTransport } from "@bufbuild/connect-web";
@@ -20,34 +20,58 @@ const transport = createConnectTransport({
 // definition with the transport.
 const client = createPromiseClient(ElizaService, transport);
 
-
 function App() {
-  const [count, setCount] = useState(0)
+  const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState<
+    {
+      fromMe: boolean;
+      message: string;
+    }[]
+  >([]);
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+    <>
+      <ol>
+        {messages.map((msg, index) => (
+          <li key={index}>
+            {`${msg.fromMe ? "ME:" : "ELIZA:"} ${msg.message}`}
+          </li>
+        ))}
+      </ol>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          // Clear inputValue since the user has submitted.
+          setInputValue("");
+          // Store the inputValue in the chain of messages and
+          // mark this message as coming from "me"
+          setMessages((prev) => [
+            ...prev,
+            {
+              fromMe: true,
+              message: inputValue,
+            },
+          ]);
+          const response = await client.say({
+            sentence: inputValue,
+          });
+          setMessages((prev) => [
+            ...prev,
+            {
+              fromMe: false,
+              message: response.sentence,
+            },
+          ]);
+        }}
+      >
+        <input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+        />
+        <button type="submit">Send</button>
+      </form>
+    </>
+  );
 }
 
-export default App
+export default App;
